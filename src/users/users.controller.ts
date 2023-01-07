@@ -15,10 +15,9 @@ export class UsersController {
   ): Promise<User> {
     const saltOrRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltOrRounds);
-    const result = await this.usersService.createUser(
+    return await this.usersService.createUser(
       username,
       hashedPassword
     );
-    return result;
   }
 }
