@@ -1,33 +1,26 @@
 import { Injectable } from "@nestjs/common";
-import { FilesService } from "../multer/files.service";
 import { KMeans, StandardScaler } from "scikitjs";
 import { ObjectId } from "mongodb";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { SongDocument } from "./songs.model";
 import extractFeatures, { decodeAudio } from "./features-extraction.service";
+import { KMeansService } from "./kmeans.service";
 
 @Injectable()
 export class PredictionService {
-  constructor( @InjectModel("songs") private readonly songsModel: Model<SongDocument>,
-               private fileService: FilesService ) {
+  constructor( @InjectModel("songs") private readonly songsModel: Model<SongDocument>,private kMeansService:KMeansService) {
   }
 
   async predictFromGridFS(
-    model: KMeans,
-    filename: string
+    audioData: any
   ): Promise<number> {
-    const bucket = this.fileService.getBucket();
-    const stream = bucket.openDownloadStreamByName(filename);
 
-    // Decode file stream from GridFS
-    const audioData = await decodeAudio(stream);
     const features = extractFeatures(audioData);
-
     // Standardize features
     const data = new StandardScaler().fitTransform([features]);
 
-    const output = await model.predict(data).array();
+    const output = await this.kMeansService.model.predict(data).array();
     return output[0];
   };
 
